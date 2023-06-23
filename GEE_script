@@ -1,0 +1,32 @@
+var image = ee.Image("projects/crowtherlab/Composite/CrowtherLab_Composite_30ArcSec").toFloat();
+print(image.bandNames());
+
+var selectedIndices = [8, 9, 81, 82, 110, 127, 139, 205, 212, 221, 231, 232, 400]; // Replace with the indices of the desired bands
+
+// Get the band names of the image
+var bandNames = image.bandNames();
+
+// Select the bands using indices
+var selectedBands = selectedIndices.map(function(index) {
+  return ee.Image(bandNames.get(index));
+});
+
+// Define the region of interest (Africa south of the equator)
+var africaSouth = ee.Geometry.Rectangle({
+  coords: [0, -40, 60, 0], // Longitude, Latitude bounds of the region
+  proj: 'EPSG:4326', // Projection
+  geodesic: false
+});
+
+var extractedImage = image.select(selectedBands).clip(africaSouth);
+print(extractedImage.bandNames());
+
+// Export the image to Google Drive
+Export.image.toDrive({
+  image: extractedImage,
+  description: 'extracted_image',
+  folder: 'GEE_exports',
+  region: africaSouth,
+  scale: 1000, // Resolution in meters
+  crs: 'EPSG:4326' // Projection for the exported image
+});
